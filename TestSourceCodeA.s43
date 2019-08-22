@@ -1,0 +1,121 @@
+;-------------------------------------------------------------------------------
+;   Test source code for Advanced Microcontroller Software 
+;
+;   Purpose:  To provide test code for the class Assembler Project
+;
+;   Target: TI MSP430 family - simulation
+;
+;       Date:           July 25, 2017
+;       Last Revision:  1.1  July 26, 2017 - minor updates
+;                       
+;       Written by:     Dr. Michael Helm, ECE dept, Texas Tech University
+;       Adapted from:   earlier example code
+;       Assembler/IDE:  class assembler project
+;
+;       HW I/O assignments: none assigned for this example
+;-------------------------------------------------------------------------------
+; Definition of Constants
+;-------------------------------------------------------------------------------
+; Watchdog timer definitions
+WDTCTL     EQU     0x0120
+WDTPW      EQU     0x5A00
+WDTHOLD    EQU     0x0080
+
+;-------------------------------------------------------------------------------
+; Definition of Variables
+;-------------------------------------------------------------------------------
+
+                ORG   0x0200     ; beginning of RAM space 
+LoopCount       DB    0
+Count           DB    0
+                               
+;define a table (array) of 8 bytes
+BufferTable:    DS    8        ; this will allocate 8 bytes of uninitialized
+                                ; bytes in RAM space
+BufferTableSize EQU $ - BufferTable   ; capture table size into a constant      
+                                      ;  literally "Current address minus
+                                      ;  address of BufferTable"
+
+;-------------------------------------------------------------------------------
+            ORG     0xC000                  ; Program Reset (prog memory start)
+                                            ; this is Program memory start 
+                                            ; address for MSP430G2553 (16K)
+;-------------------------------------------------------------------------------
+RESET       mov.w   #0x0400, SP       ; Initialize stackpointer(to end of RAM +1)
+                                     ; RAM is 512 bytes, last position is 3FFh
+                                     
+StopWDT     mov.w   #WDTPW+WDTHOLD, &WDTCTL  ; Stop WDT (Watchdog timer)
+
+MainProgramStart
+            ; objective here is clear out the BufferTable in RAM to all zeros
+            mov #BufferTableSize, R15    ; R15 is a loop counter
+            mov #BufferTable, R14        ; R14 points to start of RAM table
+ClearNextByte            
+            mov.b #0,  0(R14)      ; clear the location to zero
+  
+            inc R14                ; point to next byte in table
+            dec R15                ; done them all yet?
+            jnz  ClearNextByte     ; if no, do some more
+FinishedClearingRAMtable
+
+; now copy fixed constant table from Program Memory into RAM table
+            mov #BufferTableSize, R15    ; R15 is a loop counter
+            mov #BufferTable, R14        ; R14 points to start of RAM table
+            mov #PatternTable2, R13      ; R13 points to start of ROM table
+
+GetNextByte            
+            mov.b 0(R13),  0(R14)      ; copy byte from ROM table to RAM table                                   
+                
+            inc R13                    ;increment source addr
+            inc R14                ; point to next byte in RAM table
+            dec R15                ; done them all yet?
+            jnz  GetNextByte     ; if no, do some more
+FinishedCopyingTableToRAM
+ 
+Done        jz     Done           ;  halt here
+            jnz    Done
+                                      
+;-------------------------------------------------------------------------------
+;           End of main code
+;-------------------------------------------------------------------------------                                            
+                                           
+;-------------------------------------------------------------------------------
+;           Subroutines
+;------------------------------------------------------------------------------- 
+
+; none used here
+
+;-------------------------------------------------------------------------------
+;           End of all Subroutines
+;-------------------------------------------------------------------------------
+
+
+;-------------------------------------------------------------------------------
+;           Definition of Program Data Memory 
+;-------------------------------------------------------------------------------
+            ORG   0xE000  
+                            
+PatternTable1           ; this is just an example table (or perhaps more 
+Row0    DB  'E'   ; familar concept is this is an array of bytes 
+Row1    DB  'C'   ; containing 8 bytes as defined here)
+Row2    DB  'E'   ;  PatternTable1 is the name of the table (or array)
+Row3    DB  '-'
+Row4    DB  '3'
+Row5    DB  '3'
+Row6    DB  '6'
+Row7    DB  '2'
+
+PatternTable2  DB "EXAMPLES"
+
+;-------------------------------------------------------------------------------
+;           Interrupt Vectors
+;-------------------------------------------------------------------------------
+
+            ORG     0xFFFE                  ; MSP430 RESET Vector
+            DW      RESET                   ; establishes the label RESET as 
+                                            ; the starting point
+                                            
+;-------------------------------------------------------------------------------                                            
+            END                             ; END of all code for this program
+;-------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------

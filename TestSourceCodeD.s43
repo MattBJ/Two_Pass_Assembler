@@ -1,0 +1,109 @@
+;-------------------------------------------------------------------------------
+;   Test source code for Advanced Microcontroller Software 
+;
+;    Filename: TestSourceCodeD.s43
+;
+;   Purpose:  To provide test code for the class Assembler Project
+;
+;   Target: TI MSP430 family - simulation
+;
+;       Date:           Aug 8, 2017
+;       Last Revision:  1.0  
+;                       
+;       Written by:     Dr. Michael Helm, ECE dept, Texas Tech University
+;       Adapted from:   earlier example code
+;       Assembler/IDE:  class assembler project
+;
+;       HW I/O assignments: none assigned for this example
+;-------------------------------------------------------------------------------
+; Definition of Constants
+;-------------------------------------------------------------------------------
+; Watchdog timer definitions
+WDTCTL     EQU     0x0120
+
+;-------------------------------------------------------------------------------
+; Definition of Variables
+;-------------------------------------------------------------------------------
+
+                ORG   0x0200     ; beginning of RAM space 
+LoopCount       DB    0
+Count           DB    0
+BigVar          DW    0 
+BigVar2         DW    0
+BufferA         DS    8
+BufferSize      EQU   $ - BufferA
+
+;-------------------------------------------------------------------------------
+            ORG     0xC000                  ; Program Reset (prog memory start)
+                                            ; this is Program memory start 
+                                            ; address for MSP430G2553 (16K)
+;-------------------------------------------------------------------------------
+RESET       mov.w   #0x0400, SP       ; Initialize stackpointer(to end of RAM +1)
+                                     ; RAM is 512 bytes, last position is 3FFh
+                                     
+StopWDT     mov.w   #0x5A80, &WDTCTL  ; Stop WDT (Watchdog timer)
+
+MainProgramStart
+;copy data from ROM to RAM buffer
+            mov #BufferSize, R15
+            mov #BufferA, R14
+            mov #Table_1, R13
+MoveAnother mov.b 0(R13), 0(R14)
+            dec R15
+            jnz MoveAnother
+
+
+            mov #0x1234, &BigVar
+            mov &BigVar, R15
+            add #0x0003, R15
+            inc R15
+            cmp #0x1238, R15
+            jz  CaseA
+            bis #0x1111, R15
+            jz      MainProgramStart
+            jnz     MainProgramStart                
+CaseA       bic #0x1111, R15
+   
+
+            jz      MainProgramStart
+            jnz     MainProgramStart            
+                        
+                                      
+;-------------------------------------------------------------------------------
+;           End of main code
+;-------------------------------------------------------------------------------                                            
+                                           
+;none used here
+
+;-------------------------------------------------------------------------------
+;           End of all Subroutines
+;-------------------------------------------------------------------------------
+
+
+;-------------------------------------------------------------------------------
+;           Definition of Program Data Memory 
+;-------------------------------------------------------------------------------
+
+Table_1
+          DB  'E'
+          DB  'C'
+          DB  'E'
+          DB  '-'
+          DB  'x'
+          DB  '3'
+          DB  '3'
+          DB  '2'
+
+
+;-------------------------------------------------------------------------------
+;           Interrupt Vectors
+;-------------------------------------------------------------------------------
+
+            ORG     0xFFFE                  ; MSP430 RESET Vector
+            DW      RESET                   ; establishes the label RESET as 
+                                            ; the starting point
+                                            
+;-------------------------------------------------------------------------------                                            
+            END                             ; END of all code for this program
+;-------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
